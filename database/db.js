@@ -1,54 +1,61 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const mongoose = require('mongoose');
 
-const dbPath = path.resolve(__dirname, 'studio.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("Error opening database " + err.message);
-  } else {
-    console.log("Connected to the SQLite database.");
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT DEFAULT 'customer'
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS bookings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      name TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      date TEXT NOT NULL,
-      service TEXT NOT NULL,
-      message TEXT,
-      status TEXT DEFAULT 'Pending',
-      admin_reply TEXT,
-      payment_status TEXT DEFAULT 'Pending',
-      payment_id TEXT,
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS gallery_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      filename TEXT NOT NULL,
-      type TEXT DEFAULT 'image',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Create a default admin user if it doesn't exist
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    // Create default admin user if it doesn't exist
     const bcrypt = require('bcrypt');
-    db.get("SELECT * FROM users WHERE email = 'admin@girishstudio.com'", (err, row) => {
-      if (!row) {
-        bcrypt.hash('rash@123', 10, (err, hash) => {
-          db.run("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-            ['Admin', 'admin@girishstudio.com', hash, 'admin']);
+    const User = require('mongoose').model('User');
+    const adminExists = await User.findOne({ email: 'admin@girishstudio.com' });
+    if (!adminExists) {
+        const hash = await bcrypt.hash('rash@123', 10);
+        await User.create({
+            name: 'Admin',
+            email: 'admin@girishstudio.com',
+            password: hash,
+            role: 'admin'
         });
-      }
-    });
+        console.log('Default Admin user created.');
+    }
+  } catch (error) {
+    console.error(`Error connecting to MongoDB: ${error.message}`);
+    process.exit(1);
   }
+};
+
+// --- SCHEMAS & MODELS ---
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'customer' }
 });
 
-module.exports = db;
+const bookingSchema = new mongoose.Schema({
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  date: { type: String, required: true },
+  service: { type: String, required: true },
+  message: { type: String },
+  status: { type: String, default: 'Pending' },
+  admin_reply: { type: String },
+  payment_status: { type: String, default: 'Pending' },
+  payment_id: { type: String }
+}, { timestamps: true });
+
+const galleryItemSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  filename: { type: String, required: true },
+  type: { type: String, default: 'image' }
+}, { timestamps: true });
+
+// Export Models
+const User = mongoose.model('User', userSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
+const GalleryItem = mongoose.model('GalleryItem', galleryItemSchema);
+
+module.exports = { connectDB, User, Booking, GalleryItem };
