@@ -305,8 +305,8 @@
               let actionHtml = '';
               if (b.status.toLowerCase() === 'pending') {
                 actionHtml = `
-                  <button class="btn" style="padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" onclick="openModal(${b.id}, 'Confirmed')"><i class="fas fa-check"></i></button>
-                  <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem; color:#e74c3c; border-color:#e74c3c;" onclick="openModal(${b.id}, 'Rejected')"><i class="fas fa-times"></i></button>
+                  <button class="btn" style="padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" onclick="openModal('${b.id}', 'Confirmed')"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem; color:#e74c3c; border-color:#e74c3c;" onclick="openModal('${b.id}', 'Rejected')"><i class="fas fa-times"></i></button>
                 `;
               } else {
                 actionHtml = `<span style="font-size:0.8rem; color:var(--text-muted);"><i class="fas fa-lock"></i> Locked</span>`;
