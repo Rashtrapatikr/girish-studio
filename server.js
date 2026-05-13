@@ -177,11 +177,13 @@ app.post('/api/admin/gallery', authenticateToken, upload.single('media'), (req, 
     const publicId = req.file.filename;
     const type = req.file.mimetype && req.file.mimetype.includes('video') ? 'video' : 'image';
 
-    db.run("INSERT INTO gallery_items (title, filename, type) VALUES (?, ?, ?)", [fileUrl, publicId, type], function(err) {
+    // Store: title=user's title, filename=full Cloudinary URL, type=image/video
+    db.run("INSERT INTO gallery_items (title, filename, type) VALUES (?, ?, ?)", [title, fileUrl, type], function(err) {
         if (err) return res.status(500).json({ error: "Failed to save item" });
         res.json({ message: "Upload successful", id: this.lastID, filename: fileUrl, type });
     });
 });
+
 
 // API: Delete Gallery Item (Admin only)
 app.delete('/api/admin/gallery/:id', authenticateToken, (req, res) => {
