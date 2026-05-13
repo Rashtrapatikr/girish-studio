@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login & Register - Girish Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 120px 20px 60px;
+      min-height: 100vh;
+      background-image: linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)), url('images/hero_banner.png');
+      background-size: cover;
+      background-attachment: fixed;
+    }
+    .auth-box {
+      background-color: var(--bg-card);
+      padding: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all var(--transition-speed);
+    }
+    .auth-tab.active {
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--primary-color);
+    }
+    .auth-form {
+      display: none;
+    }
+    .auth-form.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .alert {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      display: none;
+    }
+    .alert-error {
+      background-color: rgba(231, 76, 60, 0.2);
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
+    }
+    .alert-success {
+      background-color: rgba(46, 204, 113, 0.2);
+      border: 1px solid #2ecc71;
+      color: #2ecc71;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header & Navigation -->
+  <header>
+    <div class="container nav-container">
+      <a href="index.html" class="logo">Girish<span>Studio</span></a>
+      <div class="mobile-menu-btn" id="mobile-btn"><i class="fas fa-bars"></i></div>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="auth.html" class="active" id="nav-auth-link">Login/Register</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="auth-container">
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchTab('login')">Login</div>
+        <div class="auth-tab" onclick="switchTab('register')">Register</div>
+      </div>
+
+      <div id="alert-box" class="alert"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form active">
+        <h3 style="margin-bottom: 20px; text-align: center;">Welcome Back</h3>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="login-email" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Login</button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form">
+        <h3 style="margin-bottom: 20px; text-align: center;">Create an Account</h3>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="register-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="register-email" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="register-password" class="form-control" required minlength="6">
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Register</button>
+      </form>
+
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      
+      if(tab === 'login') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('login-form').classList.add('active');
+      } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('register-form').classList.add('active');
+      }
+      document.getElementById('alert-box').style.display = 'none';
+    }
+
+    function showAlert(message, isError = true) {
+      const alertBox = document.getElementById('alert-box');
+      alertBox.textContent = message;
+      alertBox.className = 'alert ' + (isError ? 'alert-error' : 'alert-success');
+      alertBox.style.display = 'block';
+    }
+
+    // Handle Login
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          if(data.user.role === 'admin') {
+            window.location.href = 'admin/dashboard.html';
+          } else {
+            window.location.href = 'index.html'; // Or booking.html
+          }
+        } else {
+          showAlert(data.error);
+        }
+      } catch (err) {
+        showAlert('An error occurred. Please try again.');
+      }
+    });
+
+    // Handle Register
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('register-name').value;
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert('Registration successful! Please login.', false);
+          setTimeout(() => switchTab('login'), 1500);
+        } else {
+          showAlert(data.error);
+        }
+      } catch (err) {
+        showAlert('An error occurred. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>

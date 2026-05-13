@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Gallery - Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .dashboard-container { display: flex; min-height: 100vh; }
+    .sidebar { width: 250px; background-color: var(--bg-card); border-right: 1px solid rgba(212, 175, 55, 0.2); padding: 20px; display: flex; flex-direction: column; }
+    .sidebar .logo { font-size: 1.5rem; margin-bottom: 40px; text-align: center; display: block; }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li { margin-bottom: 15px; }
+    .sidebar-menu a { display: flex; align-items: center; padding: 12px 15px; border-radius: 4px; color: var(--text-light); transition: all var(--transition-speed); }
+    .sidebar-menu a:hover, .sidebar-menu a.active { background-color: rgba(212, 175, 55, 0.1); color: var(--primary-color); }
+    .sidebar-menu i { margin-right: 15px; width: 20px; text-align: center; }
+    .main-content { flex: 1; padding: 40px; background-color: var(--bg-dark); }
+    
+    .upload-container {
+      background-color: var(--bg-card);
+      padding: 30px;
+      border-radius: 8px;
+      border: 1px dashed var(--primary-color);
+      margin-bottom: 40px;
+    }
+    
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    .gallery-card {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      position: relative;
+    }
+    
+    .gallery-card img, .gallery-card video {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .gallery-info {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .delete-btn {
+      color: #e74c3c;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <a href="#" class="logo">Girish<span>Studio</span></a>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="gallery.html" class="active"><i class="fas fa-images"></i> Gallery</a></li>
+        <li style="margin-top: 50px;"><a href="#" id="admin-logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h2 style="margin-bottom: 30px;">Manage Gallery</h2>
+      
+      <!-- Upload Form -->
+      <div class="upload-container">
+        <h3 style="margin-bottom: 20px;">Add New Photo/Video</h3>
+        <form id="upload-form" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+            <label>Title / Category</label>
+            <input type="text" id="media-title" class="form-control" required placeholder="E.g., Wedding Shoot">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+            <label>Select File</label>
+            <input type="file" id="media-file" class="form-control" accept="image/*,video/*" required style="padding: 10px;">
+          </div>
+          <button type="submit" class="btn" id="upload-btn">Upload</button>
+        </form>
+        <p id="upload-status" style="margin-top: 15px; display: none;"></p>
+      </div>
+
+      <!-- Gallery Grid -->
+      <h3 style="margin-bottom: 20px;">Uploaded Media</h3>
+      <div class="gallery-grid" id="admin-gallery-grid">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">Loading gallery...</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+      if (!token || !user || user.role !== 'admin') {
+        alert('Access denied. Admin only.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      loadAdminGallery();
+
+      document.getElementById('admin-logout-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+      });
+
+      // Upload Handle
+      document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('media-file');
+        const titleInput = document.getElementById('media-title');
+        const statusMsg = document.getElementById('upload-status');
+        const btn = document.getElementById('upload-btn');
+        
+        if (fileInput.files.length === 0) return;
+
+        const formData = new FormData();
+        formData.append('media', fileInput.files[0]);
+        formData.append('title', titleInput.value);
+
+        btn.textContent = 'Uploading...';
+        btn.disabled = true;
+
+        try {
+          const res = await fetch('/api/admin/gallery', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+          });
+          const data = await res.json();
+          
+          if (res.ok) {
+            statusMsg.textContent = 'Upload Successful!';
+            statusMsg.style.color = '#2ecc71';
+            document.getElementById('upload-form').reset();
+            loadAdminGallery();
+          } else {
+            statusMsg.textContent = 'Error: ' + data.error;
+            statusMsg.style.color = '#e74c3c';
+          }
+        } catch (err) {
+          statusMsg.textContent = 'Upload failed due to server error.';
+          statusMsg.style.color = '#e74c3c';
+        }
+        
+        statusMsg.style.display = 'block';
+        btn.textContent = 'Upload';
+        btn.disabled = false;
+        
+        setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
+      });
+    });
+
+    async function loadAdminGallery() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/gallery');
+        const items = await res.json();
+        const grid = document.getElementById('admin-gallery-grid');
+        
+        if (res.ok) {
+          if (items.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">No media uploaded yet.</div>';
+          } else {
+            grid.innerHTML = '';
+            items.forEach(item => {
+              const mediaHtml = item.type === 'video' 
+                ? `<video src="${item.filename}" controls></video>`
+                : `<img src="${item.filename}" alt="${item.title}">`;
+                
+              grid.innerHTML += `
+                <div class="gallery-card">
+                  ${mediaHtml}
+                  <div class="gallery-info">
+                    <strong>${item.title}</strong>
+                    <button class="delete-btn" onclick="deleteItem(${item.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                  </div>
+                </div>
+              `;
+            });
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteItem(id) {
+      if (!confirm('Are you sure you want to delete this item?')) return;
+      
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/admin/gallery/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          loadAdminGallery();
+        } else {
+          alert('Failed to delete item.');
+        }
+      } catch(err) {
+        alert('Server error.');
+      }
+    }
+  </script>
+</body>
+</html>

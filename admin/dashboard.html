@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Girish Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: var(--bg-card);
+      border-right: 1px solid rgba(212, 175, 55, 0.2);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar .logo {
+      font-size: 1.5rem;
+      margin-bottom: 40px;
+      text-align: center;
+      display: block;
+    }
+    .sidebar-menu {
+      list-style: none;
+    }
+    .sidebar-menu li {
+      margin-bottom: 15px;
+    }
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      border-radius: 4px;
+      color: var(--text-light);
+      transition: all var(--transition-speed);
+    }
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background-color: rgba(212, 175, 55, 0.1);
+      color: var(--primary-color);
+    }
+    .sidebar-menu i {
+      margin-right: 15px;
+      width: 20px;
+      text-align: center;
+    }
+    .main-content {
+      flex: 1;
+      padding: 40px;
+      background-color: var(--bg-dark);
+    }
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background-color: var(--bg-card);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      display: flex;
+      align-items: center;
+    }
+    .stat-icon {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-right: 20px;
+    }
+    .stat-info h3 {
+      font-size: 2rem;
+      margin-bottom: 0;
+    }
+    .stat-info p {
+      color: var(--text-muted);
+      margin-bottom: 0;
+    }
+    .table-container {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      padding: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    th {
+      color: var(--primary-color);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+    tr:hover {
+      background-color: rgba(255,255,255,0.02);
+    }
+    .status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status-pending { background-color: rgba(243, 156, 18, 0.2); color: #f39c12; }
+    .status-confirmed { background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <a href="#" class="logo">Girish<span>Studio</span></a>
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="gallery.html"><i class="fas fa-images"></i> Gallery</a></li>
+        <li><a href="#"><i class="fas fa-list"></i> Services</a></li>
+        <li><a href="#"><i class="fas fa-users"></i> Customers</a></li>
+        <li style="margin-top: 50px;"><a href="#" id="change-creds-btn"><i class="fas fa-key"></i> Change Password</a></li>
+        <li><a href="#" id="admin-logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h2 style="margin-bottom: 30px;">Overview</h2>
+      
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-info">
+            <h3 id="total-bookings">0</h3>
+            <p>Total Bookings</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+          <div class="stat-info">
+            <h3>45k</h3>
+            <p>Revenue</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <h3>18</h3>
+            <p>Clients</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 20px;">Recent Bookings</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer Name</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-table-body">
+            <tr><td colspan="6" style="text-align: center;">Loading bookings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Action Modal -->
+  <div id="action-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); padding:30px; border-radius:8px; width:400px; max-width:90%; border:1px solid rgba(212, 175, 55, 0.3);">
+      <h3 id="modal-title" style="margin-bottom:20px;">Confirm Booking</h3>
+      <form id="action-form">
+        <input type="hidden" id="modal-booking-id">
+        <input type="hidden" id="modal-action-type">
+        <div class="form-group">
+          <label>Message to Customer (Optional for Confirm, Required for Reject)</label>
+          <textarea id="modal-message" class="form-control" rows="3" placeholder="E.g., Date is not available..."></textarea>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn" id="modal-submit-btn">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Credentials Modal -->
+  <div id="creds-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:3000; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); padding:35px; border-radius:12px; width:420px; max-width:90%; border:1px solid rgba(212,175,55,0.4);">
+      <h3 style="margin-bottom:5px;"><i class="fas fa-key" style="color:var(--primary-color); margin-right:10px;"></i>Change Admin Credentials</h3>
+      <p style="color:var(--text-muted); margin-bottom:25px; font-size:0.9rem;">Data safe rahega — koi booking delete nahi hogi.</p>
+      <form id="creds-form">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="creds-current" class="form-control" required placeholder="Apna current password daalein">
+        </div>
+        <div class="form-group">
+          <label>New Email (Optional)</label>
+          <input type="email" id="creds-email" class="form-control" placeholder="New email (khali chodein to same rahega)">
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="creds-newpass" class="form-control" required placeholder="Naya password daalein">
+        </div>
+        <p id="creds-msg" style="margin-top:10px; display:none;"></p>
+        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('creds-modal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn" id="creds-submit-btn">Update Credentials</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function closeModal() {
+      document.getElementById('action-modal').style.display = 'none';
+      document.getElementById('action-form').reset();
+    }
+
+    function openModal(id, type) {
+      document.getElementById('modal-booking-id').value = id;
+      document.getElementById('modal-action-type').value = type;
+      
+      const title = document.getElementById('modal-title');
+      const submitBtn = document.getElementById('modal-submit-btn');
+      
+      if (type === 'Rejected') {
+        title.textContent = 'Reject Booking #' + id;
+        submitBtn.style.backgroundColor = '#e74c3c';
+        submitBtn.style.borderColor = '#e74c3c';
+        submitBtn.textContent = 'Reject';
+      } else {
+        title.textContent = 'Confirm Booking #' + id;
+        submitBtn.style.backgroundColor = 'var(--primary-color)';
+        submitBtn.style.borderColor = 'var(--primary-color)';
+        submitBtn.textContent = 'Confirm';
+      }
+      
+      document.getElementById('action-modal').style.display = 'flex';
+    }
+
+    document.getElementById('action-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('modal-booking-id').value;
+      const type = document.getElementById('modal-action-type').value;
+      const message = document.getElementById('modal-message').value;
+
+      if (type === 'Rejected' && !message.trim()) {
+        alert('Please provide a reason for rejection.');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/admin/bookings/' + id, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ status: type, admin_reply: message })
+        });
+        
+        if (res.ok) {
+          closeModal();
+          loadBookings(); // Reload the table
+        } else {
+          alert('Failed to update booking.');
+        }
+      } catch(err) {
+        alert('Server error.');
+      }
+    });
+
+    async function loadBookings() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/admin/bookings', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const bookings = await res.json();
+        
+        const tbody = document.getElementById('bookings-table-body');
+        
+        if (res.ok) {
+          if (bookings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No bookings found.</td></tr>';
+          } else {
+            tbody.innerHTML = '';
+            bookings.forEach(b => {
+              const statusClass = b.status.toLowerCase() === 'confirmed' ? 'status-confirmed' : b.status.toLowerCase() === 'rejected' ? 'status-rejected' : 'status-pending';
+              let actionHtml = '';
+              if (b.status.toLowerCase() === 'pending') {
+                actionHtml = `
+                  <button class="btn" style="padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" onclick="openModal(${b.id}, 'Confirmed')"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem; color:#e74c3c; border-color:#e74c3c;" onclick="openModal(${b.id}, 'Rejected')"><i class="fas fa-times"></i></button>
+                `;
+              } else {
+                actionHtml = `<span style="font-size:0.8rem; color:var(--text-muted);"><i class="fas fa-lock"></i> Locked</span>`;
+              }
+
+              const paymentStatusClass = b.payment_status === 'Paid' ? 'status-confirmed' : 'status-pending';
+              const paymentHtml = `<span class="status ${paymentStatusClass}">${b.payment_status}</span>`;
+
+              tbody.innerHTML += `
+                <tr>
+                  <td>#${String(b.id).padStart(3, '0')}</td>
+                  <td>${b.name}<br><small style="color:var(--text-muted)">${b.phone}</small></td>
+                  <td>${b.service}</td>
+                  <td>${b.date}</td>
+                  <td><span class="status ${statusClass}">${b.status}</span><br><br>${paymentHtml}</td>
+                  <td>
+                    ${actionHtml}
+                    <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.8rem; margin-left:5px; color:var(--text-muted); border-color:var(--text-muted);" title="View Customer Message" onclick="alert('Customer Message: ${b.message || 'No message'}')"><i class="fas fa-comment"></i></button>
+                  </td>
+                </tr>
+              `;
+            });
+            document.getElementById('total-bookings').textContent = bookings.length;
+          }
+        } else {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load bookings.</td></tr>';
+        }
+      } catch (err) {
+        document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Error connecting to server.</td></tr>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+      if (!token || !user || user.role !== 'admin') {
+        alert('Access denied. Admin only.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      loadBookings();
+
+      const logoutBtn = document.getElementById('admin-logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = 'login.html';
+        });
+      }
+
+      // Change Credentials
+      const changeCredsBtn = document.getElementById('change-creds-btn');
+      if (changeCredsBtn) {
+        changeCredsBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('creds-modal').style.display = 'flex';
+          document.getElementById('creds-form').reset();
+          document.getElementById('creds-msg').style.display = 'none';
+        });
+      }
+
+      document.getElementById('creds-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const btn = document.getElementById('creds-submit-btn');
+        const msg = document.getElementById('creds-msg');
+        btn.textContent = 'Updating...';
+        btn.disabled = true;
+
+        const payload = {
+          current_password: document.getElementById('creds-current').value,
+          new_password: document.getElementById('creds-newpass').value,
+          new_email: document.getElementById('creds-email').value || undefined
+        };
+
+        try {
+          const res = await fetch('/api/admin/change-credentials', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          msg.style.display = 'block';
+          if (res.ok) {
+            msg.style.color = '#2ecc71';
+            msg.textContent = '✅ ' + data.message;
+            setTimeout(() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              window.location.href = 'login.html';
+            }, 2000);
+          } else {
+            msg.style.color = '#e74c3c';
+            msg.textContent = '❌ ' + data.error;
+          }
+        } catch (err) {
+          msg.style.color = '#e74c3c';
+          msg.textContent = '❌ Server error';
+          msg.style.display = 'block';
+        }
+
+        btn.textContent = 'Update Credentials';
+        btn.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>

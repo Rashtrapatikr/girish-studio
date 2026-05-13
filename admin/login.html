@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Girish Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-image: linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)), url('../images/hero_banner.png');
+      background-size: cover;
+    }
+    .login-container {
+      background-color: var(--bg-card);
+      padding: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+    .login-container .logo {
+      display: block;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <a href="../index.html" class="logo">Girish<span>Studio</span></a>
+    <h2 style="margin-bottom: 20px;">Admin Login</h2>
+    <div id="alert-box" style="display:none; color: #e74c3c; margin-bottom: 15px;"></div>
+    <form id="admin-login-form">
+      <div class="form-group" style="text-align: left;">
+        <label for="email">Email</label>
+        <input type="email" id="email" class="form-control" required>
+      </div>
+      <div class="form-group" style="text-align: left;">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Login</button>
+    </form>
+    <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);"><a href="../index.html"><i class="fas fa-arrow-left"></i> Back to Website</a></p>
+  </div>
+
+  <script>
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const alertBox = document.getElementById('alert-box');
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          if (data.user.role === 'admin') {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.location.href = 'dashboard.html';
+          } else {
+            alertBox.textContent = 'Access Denied: Not an admin.';
+            alertBox.style.display = 'block';
+          }
+        } else {
+          alertBox.textContent = data.error;
+          alertBox.style.display = 'block';
+        }
+      } catch (err) {
+        alertBox.textContent = 'An error occurred.';
+        alertBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

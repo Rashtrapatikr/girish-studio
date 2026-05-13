@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Now - Girish Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- AOS Animation CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+</head>
+<body>
+
+  <header>
+    <div class="container nav-container">
+      <a href="index.html" class="logo">Girish<span>Studio</span></a>
+      <div class="mobile-menu-btn" id="mobile-btn"><i class="fas fa-bars"></i></div>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="booking.html" class="active">Book Now</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="inner-header">
+    <div class="container">
+      <h1 data-aos="fade-down">Book an Appointment</h1>
+    </div>
+  </section>
+
+  <section class="padding-y">
+    <div class="container">
+      <div class="booking-form">
+        <h2 class="text-center" style="margin-bottom: 30px;">Fill the Details</h2>
+        <form data-aos="zoom-in" data-aos-delay="100" id="booking-form">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" class="form-control" required placeholder="Enter your full name">
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" class="form-control" required placeholder="Enter your mobile number">
+          </div>
+          <div class="form-group">
+            <label for="date">Event Date</label>
+            <input type="date" id="date" name="date" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="service">Service Type</label>
+            <select id="service" name="service" class="form-control" required>
+              <option value="">Select a Service...</option>
+              <option value="wedding">Wedding Shoot</option>
+              <option value="cinematic">Cinematic Video</option>
+              <option value="passport">Passport Photo</option>
+              <option value="album">Album Design</option>
+              <option value="drone">Drone Shoot</option>
+              <option value="other">Other Service</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Additional Details (Optional)</label>
+            <textarea id="message" name="message" class="form-control" placeholder="Tell us more about your event..."></textarea>
+          </div>
+          <div class="text-center" style="margin-top: 30px;">
+            <button type="submit" class="btn" style="width: 100%;">Confirm Booking</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>Girish Studio</h3>
+          <p>Professional photography and cinematic video editing services to make your memories timeless.</p>
+        </div>
+        <div class="footer-col">
+          <h3>Quick Links</h3>
+          <p><a href="about.html">About Us</a></p>
+          <p><a href="services.html">Our Services</a></p>
+          <p><a href="booking.html">Book Appointment</a></p>
+        </div>
+        <div class="footer-col">
+          <h3>Contact Us</h3>
+          <p><i class="fas fa-phone-alt" style="color: var(--primary-color); margin-right: 10px;"></i> +91 7070221818</p>
+          <p><i class="fas fa-envelope" style="color: var(--primary-color); margin-right: 10px;"></i> rashtrapatikumar@gmail.com</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const bookingForm = document.getElementById('booking-form');
+      if (bookingForm) {
+        bookingForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const token = localStorage.getItem('token');
+          if (!token) {
+            alert('Please login first to book.');
+            window.location.href = 'auth.html';
+            return;
+          }
+
+          const name = document.getElementById('name').value;
+          const phone = document.getElementById('phone').value;
+          const date = document.getElementById('date').value;
+          const service = document.getElementById('service').value;
+          const message = document.getElementById('message').value;
+
+          try {
+            const res = await fetch('/api/book', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ name, phone, date, service, message })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+              alert('Booking successful! We will contact you soon.');
+              bookingForm.reset();
+            } else {
+              alert('Error: ' + data.error);
+            }
+          } catch (err) {
+            alert('An error occurred while booking. Please try again.');
+          }
+        });
+      }
+    });
+  </script>
+  <!-- AOS Animation Script -->
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+    AOS.init({ duration: 800, once: true, offset: 100 });
+  </script>
+</body>
+</html>

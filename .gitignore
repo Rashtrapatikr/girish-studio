@@ -1,0 +1,15 @@
+# Node modules
+node_modules/
+
+# Environment variables (secret - GitHub pe mat dalo)
+.env
+
+# Database file (local hai, Render apna banayega)
+database/studio.db
+
+# Uploaded files (Cloudinary me store honge)
+uploads/
+
+# Logs
+*.log
+npm-debug.log*

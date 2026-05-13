@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings - Girish Studio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    .bookings-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .booking-card {
+      background-color: var(--bg-card);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .booking-info h3 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+    }
+    .booking-info p {
+      margin-bottom: 5px;
+      color: var(--text-muted);
+    }
+    .booking-status {
+      text-align: right;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .status-pending { background-color: rgba(243, 156, 18, 0.2); color: #f39c12; }
+    .status-confirmed { background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .status-rejected { background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    
+    .admin-reply {
+      width: 100%;
+      margin-top: 15px;
+      padding: 15px;
+      background-color: rgba(0,0,0,0.3);
+      border-left: 4px solid var(--primary-color);
+      border-radius: 4px;
+      font-style: italic;
+    }
+    .admin-reply.rejected { border-left-color: #e74c3c; }
+    .admin-reply.confirmed { border-left-color: #2ecc71; }
+  </style>
+  <!-- AOS Animation CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+</head>
+<body>
+
+  <header>
+    <div class="container nav-container">
+      <a href="index.html" class="logo">Girish<span>Studio</span></a>
+      <div class="mobile-menu-btn" id="mobile-btn"><i class="fas fa-bars"></i></div>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="booking.html">Book Now</a></li>
+        <li><a href="my_bookings.html" class="active">My Bookings</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="inner-header" style="height: 30vh; min-height: 200px;">
+    <div class="container">
+      <h1 data-aos="fade-down">My Bookings</h1>
+    </div>
+  </section>
+
+  <section style="min-height: 50vh;">
+    <div class="container bookings-container" id="bookings-list">
+      <div style="text-align: center; padding: 50px;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-color);"></i>
+        <p style="margin-top: 15px;">Loading your bookings...</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p>&copy; 2026 Girish Studio. All Rights Reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to view your bookings.');
+        window.location.href = 'auth.html';
+        return;
+      }
+
+      const bookingsList = document.getElementById('bookings-list');
+
+      try {
+        const res = await fetch('/api/my-bookings', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const bookings = await res.json();
+
+        if (res.ok) {
+          if (bookings.length === 0) {
+            bookingsList.innerHTML = `
+              <div style="text-align: center; padding: 50px;">
+                <h3 style="margin-bottom: 20px;">You haven't made any bookings yet.</h3>
+                <a href="booking.html" class="btn">Book an Appointment</a>
+              </div>
+            `;
+          } else {
+            bookingsList.innerHTML = '';
+            bookings.forEach(b => {
+              const statusLower = b.status.toLowerCase();
+              let badgeClass = 'status-pending';
+              if (statusLower === 'confirmed') badgeClass = 'status-confirmed';
+              if (statusLower === 'rejected') badgeClass = 'status-rejected';
+
+              let actionHtml = '';
+              if (b.status === 'Rejected') {
+                actionHtml = `<div style="background-color:rgba(231,76,60,0.1); border:1px solid #e74c3c; padding:10px; border-radius:4px; margin-top:15px;">
+                                <strong style="color:#e74c3c;">Reason:</strong> ${b.admin_reply || 'Not available'}
+                              </div>`;
+              } else if (b.status === 'Confirmed') {
+                actionHtml = `<div style="background-color:rgba(46,204,113,0.1); border:1px solid #2ecc71; padding:10px; border-radius:4px; margin-top:15px; color: #2ecc71;">
+                                <strong>Message:</strong> ${b.admin_reply || 'Date confirmed! Please proceed with payment.'}
+                              </div>`;
+                
+                if (b.payment_status === 'Paid') {
+                  actionHtml += `<div style="margin-top:15px; text-align:right;"><span class="status status-confirmed"><i class="fas fa-check-circle"></i> Paid Successfully</span></div>`;
+                } else {
+                  actionHtml += `<div style="margin-top:15px; text-align:right;">
+                                   <button class="btn" onclick="initPayment(${b.id})">Pay Booking Advance (₹5000)</button>
+                                 </div>`;
+                }
+              }
+
+              bookingsList.innerHTML += `
+                <div class="booking-card">
+                  <div class="booking-info">
+                    <h3>${b.service}</h3>
+                    <p><i class="fas fa-calendar-alt" style="width:20px;"></i> Date: <strong>${b.date}</strong></p>
+                    <p><i class="fas fa-comment-dots" style="width:20px;"></i> Your Message: ${b.message || 'None'}</p>
+                  </div>
+                  <div class="booking-status">
+                    <div class="status-badge ${badgeClass}">${b.status}</div>
+                    <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">Booking #${String(b.id).padStart(3, '0')}</p>
+                  </div>
+                  ${actionHtml}
+                </div>
+              `;
+            });
+          }
+        } else {
+          bookingsList.innerHTML = `<p style="color: red; text-align: center;">Error loading bookings.</p>`;
+        }
+      } catch (err) {
+        bookingsList.innerHTML = `<p style="color: red; text-align: center;">Failed to connect to server.</p>`;
+      }
+    });
+  </script>
+  <!-- AOS Animation Script -->
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+    AOS.init({ duration: 800, once: true, offset: 100 });
+    // Razorpay Payment Logic
+    async function initPayment(bookingId) {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      try {
+        const res = await fetch('/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ booking_id: bookingId, amount: 5000 }) // Example Rs 5000 advance
+        });
+        const order = await res.json();
+        
+        if (order.id && order.id.startsWith('order_mock_')) {
+           // MOCK FLOW for testing without real keys
+           alert("[Test Mode] Simulating payment of ₹5000...");
+           setTimeout(async () => {
+               const verifyRes = await fetch('/api/verify-payment', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                   body: JSON.stringify({
+                       booking_id: bookingId,
+                       razorpay_order_id: order.id,
+                       razorpay_payment_id: "pay_mock_" + Math.floor(Math.random()*10000),
+                       razorpay_signature: "mock_signature"
+                   })
+               });
+               if(verifyRes.ok) { alert("Payment Successful!"); window.location.reload(); }
+           }, 1500);
+           return;
+        }
+        
+        // REAL FLOW
+        var options = {
+            "key": "YOUR_RAZORPAY_KEY_ID", // Add your real Key ID here
+            "amount": order.amount,
+            "currency": "INR",
+            "name": "Girish Studio",
+            "description": "Advance Booking Payment",
+            "order_id": order.id,
+            "handler": async function (response){
+                const verifyRes = await fetch('/api/verify-payment', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                   body: JSON.stringify({
+                       booking_id: bookingId,
+                       razorpay_order_id: response.razorpay_order_id,
+                       razorpay_payment_id: response.razorpay_payment_id,
+                       razorpay_signature: response.razorpay_signature
+                   })
+                });
+                if(verifyRes.ok) { 
+                    alert("Payment Successful!"); 
+                    window.location.reload(); 
+                } else {
+                    alert("Payment verification failed.");
+                }
+            },
+            "prefill": { "name": user.name, "email": user.email },
+            "theme": { "color": "#D4AF37" }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+      } catch (err) {
+        alert("Failed to initialize payment gateway");
+      }
+    }
+
+  </script>
+</body>
+</html>
